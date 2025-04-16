@@ -1,0 +1,10 @@
+matplotlib==3.10.1
+mediapipe==0.10.20
+numpy==2.2.4
+opencv_contrib_python==4.11.0.86
+opencv_python==4.10.0.84
+pandas==2.2.3
+scikit_learn==1.6.1
+torch==2.5.1
+torch_geometric==2.6.1
+wandb==0.19.9

@@ -1,0 +1,6 @@
+15/04/2025 jam 01:24 AM
+saat ini saya sudah menyelesaikan program train gcn kfold dengan menampilkan hasil train dan validation kelima fold dalam tiap epoch.
+saya telah mencoba membuat data test dengan 2 video (fall & non_fall), membuat program ekstraks frame, ekstrak skeleton dan predict yang khusus untuk datatest. 
+permasalahan saat ini, hasil predict di terminal menunjukkan prediksi nya 0 untuk setiap file, baik data fall maupun data non fall.
+kemungkinan permasalahnya masih pada program predict tersebut, sebab saya belum paham bagaimana cara membuat nya.
+saya juga curiga dengan program train kfold yang digunakan untuk melatih model, seperti biasa karena hasil train dan validation nya selalu 100%.
