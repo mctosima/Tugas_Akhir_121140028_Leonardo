@@ -1,29 +1,35 @@
+# Fall Detection using Graph Convolutional Network Dased on Skeleton Landmarks Mediapipe
+
 ## Getting Started
 1. Clone this repository
-2. Create an empty folder named `data-kaggle`, `data-skeleton` and `skeleton-preview`
-3. Copy the dataset from Kaggle to the `data-kaggle` folder
-    - Inside `data-kaggle` folder, there should be a folder named `train`, `test`, and `sample_submission.csv`
-4. Create a virtual environment with Python 3.10. Activate the virtual environment
-5. Install the required packages
+2. Create a virtual environment with Python 3.10. Activate the virtual environment
+3. Install the required packages
     ```bash
     pip install -r requirements.txt
     ```
 
+## How to Run the Project
+Activate the virtual environment and run the following command:
+```bash
+python train_gcn_kfold.py
+```
 
 ## Project Structure
-- `data-kaggle`: Contains the dataset from Kaggle
 - `data-skeleton`: Contains the extracted skeleton landmarks from the dataset
+- `extract_frame_program`: Contains the program to extract the frames from the video dataset
 - `skeleton-preview`: Contains the preview of the skeleton landmarks in .jpg format
-- `splits`: Contains the train and validation splits path in .json format
-    - `splits/LOSO_split.json`: Leave-One-Subject-Out split. Satu subjek dijadikan validation set
-    - `splits/Mix_split.json`: Untuk setiap scene pada `fall` dan `non_fall`, ambil dari satu subjek untuk dijadikan validation set
-- `model`: Contains the pre-trained PyTorch model
+- `splits`: Contains the train and validation splits path (implementing 5-Fold splits) in .json format
+- `model`: Contains the PyTorch model
+- `pth`: Contains the trained model weights
+- `testing`: Contains the testing data (skeleton landmarks) and the testing script
 
 ## `.py` Files
-- `extract_skeleton.py`: Extract the skeleton landmarks from the dataset
-- `func_distance_features.py`: A function to calculate the distance features from the skeleton landmarks
-- `func_lm_to_graph.py`: A function to convert the skeleton landmarks to a graph representation
+- `extract_skeleton.py`: Extract the skeleton landmarks from the dataset.
+- `func_distance_features.py`: A function to calculate the distance features from the skeleton landmarks.
+- `func_lm_to_graph.py`: A function to convert the skeleton landmarks to a graph representation.
 - `utils.py`: My handy tools to select the GPU
-- `datareader_gcn.py`: A custom PyTorch dataset class to read the skeleton landmarks
-- `model/gcn_model.py`: The Graph Convolutional Network model for the skeleton landmarks fall detection
-- `train_gcn.py`: The training script for the Graph Convolutional Network model
+- `k_fold_datareader.py`: A custom PyTorch program that contains the functions to read the skeleton landmarks, generate 5-fold splits then save it to folder splits, and verify those 5-Fold split files.
+- `k_fold_dataset.py`: A custom PyTorch class that contains the functions to read the 5-Fold split files and generate the graph representation of the skeleton landmarks.
+- `model/gcn_model.py`: The Graph Convolutional Network model for the skeleton landmarks fall detection.
+- `train_gcn_kfold.py`: The main script for the project: including read, load dataset and train the Graph Convolutional Network model.
+- `utils.py`: A custom PyTorch function to detect any appropriate gpu that can be used for faster training.

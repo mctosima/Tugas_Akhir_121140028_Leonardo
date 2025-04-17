@@ -9,7 +9,7 @@ from torch_geometric.loader import DataLoader
 class FallDetectionDatasetKFold(Dataset):
     def __init__(self, fold_number=1, is_train=True, split_dir='splits', print_path=False):
         """
-        Initialize Fall Detection Dataset with K-Fold cross-validation support
+        Initialize Fall Detection Dataset with K-Fold
         
         Args:
             fold_number (int): Which fold to use (1-based index)

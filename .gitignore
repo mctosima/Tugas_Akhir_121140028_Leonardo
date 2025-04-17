@@ -6,6 +6,10 @@ __pycache__/
 # Folder
 extracted_frames/
 
+# files
+tugas_akhir
+tugas_akhir.pub
+
 # C extensions
 *.so
 

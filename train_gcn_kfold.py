@@ -1,7 +1,7 @@
 import torch
 from torch.optim import AdamW
 from torch.nn import BCELoss
-from model.gcn_improve_claude import ImprovedGCN
+from model.gcn_model import ImprovedGCN
 from kfold_dataset import FallDetectionDatasetKFold
 from torch_geometric.loader import DataLoader
 from torch.optim.lr_scheduler import StepLR
