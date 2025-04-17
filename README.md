@@ -22,13 +22,13 @@ python "testing/test_gcn_kfold.py"
 ```
 
 ## Project Structure
-- `data-skeleton`: Contains the extracted skeleton landmarks from the dataset
-- `extract_frame_program`: Contains the program to extract the frames from the video dataset
-- `skeleton-preview`: Contains the preview of the skeleton landmarks in .jpg format
+- `data-skeleton`: Contains the extracted skeleton landmarks from the dataset.
+- `extract_frame_program`: Contains the program to extract the frames from the video dataset.
+- `skeleton-preview`: Contains the preview of the skeleton landmarks in .jpg format.
 - `splits`: Contains the train and validation splits path (implementing 5-Fold splits) in .json format
-- `model`: Contains the PyTorch model
-- `pth`: Contains the trained model weights
-- `testing`: Contains the testing data (skeleton landmarks) and the testing script
+- `model`: Contains the PyTorch model.
+- `pth`: Contains the trained model weights.
+- `testing`: Contains the testing data (skeleton landmarks) and the testing script.
 
 ## `.py` Files
 - `extract_skeleton.py`: Extract the skeleton landmarks from the dataset.
@@ -43,3 +43,7 @@ python "testing/test_gcn_kfold.py"
 - `testing/extract_skeleton.py`: A script to extract the skeleton landmarks from the testing dataset.
 - `testing/video_frame_extract.py`: A script to extract the frames from the test video dataset.
 - `testing/prediction_v2.py`: A script to predict the fall detection using the trained model.
+
+
+## Dataset
+The datasets used in this project can be accessed with this [link](https://kuleuven.app.box.com/s/dyo66et36l2lqvl19i9i7p66761sy0s6)
