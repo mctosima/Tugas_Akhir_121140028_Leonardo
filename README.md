@@ -14,6 +14,13 @@ Activate the virtual environment and run the following command:
 python train_gcn_kfold.py
 ```
 
+## How to testing the model
+1. copy the best model weights from the `pth` folder to the `testing` folder
+2. Run the following command:
+```bash
+python "testing/test_gcn_kfold.py"
+```
+
 ## Project Structure
 - `data-skeleton`: Contains the extracted skeleton landmarks from the dataset
 - `extract_frame_program`: Contains the program to extract the frames from the video dataset
@@ -33,3 +40,6 @@ python train_gcn_kfold.py
 - `model/gcn_model.py`: The Graph Convolutional Network model for the skeleton landmarks fall detection.
 - `train_gcn_kfold.py`: The main script for the project: including read, load dataset and train the Graph Convolutional Network model.
 - `utils.py`: A custom PyTorch function to detect any appropriate gpu that can be used for faster training.
+- `testing/extract_skeleton.py`: A script to extract the skeleton landmarks from the testing dataset.
+- `testing/video_frame_extract.py`: A script to extract the frames from the test video dataset.
+- `testing/prediction_v2.py`: A script to predict the fall detection using the trained model.
