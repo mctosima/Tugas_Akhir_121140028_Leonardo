@@ -110,12 +110,19 @@ Fungsi di atas untuk mengekstrak frame dalam durasi tertentu, sesuai dengan data
 ### 23 - 31
 - Tidak mengerjakan apa pun yang berhubungan dengan kuliah.
 
-## Maret 2025
+## April 2025
 
 ### 1 - 5
 - Mengerjakan BAB 1 Laporan Tugas Akhir di microsoft word.
 
-### 6 - 10
+### 6 - 12
 - mencoba menerapkan pembagian data 5-Fold dengan merevisi program data reader dan train model. Setelah revisi, hasil train masih tetap sama, yaitu 100% dari epoch pertama sampai akhir
 - Mengecek dan menghapus manual file data skeleton yang gagal dideteksi oleh Mediapipe.
 - Belajar Menyusun Laporan Tugas Akhir di Overleaf.
+
+### 13 - 19
+- Mengerjakan revisi laporan Tugas Akhir.
+
+### 20 - 26
+- Membahas perbaikan program train_gcn_kfold.py dengan pak martin.
+- Daftar Seminar proposal.
