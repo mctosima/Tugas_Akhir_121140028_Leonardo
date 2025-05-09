@@ -117,7 +117,7 @@ def process_skeletons_for_prediction(skeleton_dir, model_path):
         seed=42
     )
     
-    model_path = os.path.join(os.getcwd(), 'test', model_path)
+    model_path = os.path.join(os.getcwd(), 'testing', model_path)
     if not os.path.exists(model_path):
         raise FileNotFoundError(f"Model path {model_path} does not exist.")
     model.load_state_dict(torch.load(model_path, weights_only=True))  # Corrected for security and performance
@@ -146,8 +146,8 @@ def process_skeletons_for_prediction(skeleton_dir, model_path):
 # Example usage
 if __name__ == '__main__':
     model_path = '5fold_20250414171717_epoch3_val1.0000.pth'
-    skeleton_dir_fall = os.path.join(os.getcwd(), 'test', 'data-skeleton', 'fall')
-    skeleton_dir_not_fall = os.path.join(os.getcwd(), 'test', 'data-skeleton', 'not_fall')
+    skeleton_dir_fall = os.path.join(os.getcwd(), 'testing', 'data-skeleton', 'fall')
+    skeleton_dir_not_fall = os.path.join(os.getcwd(), 'testing', 'data-skeleton', 'not_fall')
     
     if not os.path.exists(skeleton_dir_fall):
         raise FileNotFoundError(f"Skeleton directory {skeleton_dir_fall} does not exist.")

@@ -126,3 +126,15 @@ Fungsi di atas untuk mengekstrak frame dalam durasi tertentu, sesuai dengan data
 ### 20 - 26
 - Membahas perbaikan program train_gcn_kfold.py dengan pak martin.
 - Daftar Seminar proposal.
+
+### 27 - 30
+- Mengerjakan evisi Laporan Tugas Akhir.
+
+## Mei 2025
+
+### 1 - 3
+- Melakukan Bimbingan Laporan Tugas Akhir dengan Bu Leslie.
+
+### 4 - 10
+- Mengerjakan perbaikan porgram train_gcn_kfold.py dengan mengubah alur pelatihan model dimana tiap fold dataset melatih model yang berbeda. (saat ini 5-Fold, 5 model berbeda).
+- Mengerjakan revisi BAB 2 laporan Tugas Akhir.
