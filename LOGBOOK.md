@@ -138,3 +138,10 @@ Fungsi di atas untuk mengekstrak frame dalam durasi tertentu, sesuai dengan data
 ### 4 - 10
 - Mengerjakan perbaikan porgram train_gcn_kfold.py dengan mengubah alur pelatihan model dimana tiap fold dataset melatih model yang berbeda. (saat ini 5-Fold, 5 model berbeda).
 - Mengerjakan revisi BAB 2 laporan Tugas Akhir.
+
+### 11 - 17
+- Mengerjakan revisi BAB 2 laporan Tugas Akhir.
+- Persiapan mengikuti test sertifikasi DCML.
+
+### 18 - 24
+- Fokus menegerjakan test sertifikasi DCML
