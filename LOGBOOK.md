@@ -142,6 +142,7 @@ Fungsi di atas untuk mengekstrak frame dalam durasi tertentu, sesuai dengan data
 ### 11 - 17
 - Mengerjakan revisi BAB 2 laporan Tugas Akhir.
 - Persiapan mengikuti test sertifikasi DCML.
+- Catatan Pak Martin: [link](https://getupnote.com/share/notes/IodsClZLz1Z6O49Xs9Dbzh6mKUS2/f0899ab5-afe3-4e2e-bb59-a401a13c3cb4)
 
 ### 18 - 24
 - Fokus menegerjakan test sertifikasi DCML
