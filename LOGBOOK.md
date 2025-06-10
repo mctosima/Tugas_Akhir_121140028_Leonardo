@@ -146,3 +146,14 @@ Fungsi di atas untuk mengekstrak frame dalam durasi tertentu, sesuai dengan data
 
 ### 18 - 24
 - Fokus menegerjakan test sertifikasi DCML
+
+### 25 - 31
+- Mengerjakan revisi Laporan TA Bab 1, Bab 2 dan mulai menyicil Bab 3
+
+## Juni 2025
+
+### 1 - 7
+- Mengerjakan revisi Laporan TA Bab 1, Bab 2 dan mulai menyicil Bab 3
+
+### 8 - 14
+- Persiapan Seminar Proposal
