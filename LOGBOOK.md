@@ -157,3 +157,10 @@ Fungsi di atas untuk mengekstrak frame dalam durasi tertentu, sesuai dengan data
 
 ### 8 - 14
 - Persiapan Seminar Proposal
+- Pada tgl 11 Juni jam 16.00 WIB melaksanakan seminar proposal
+
+### 15 - 21
+- Belum mengerjakan apapun yang berhubungan dengan Tugas Akhir
+
+### 22 - 28
+- Mulai mengerjakan revisi Tugas Akhir
