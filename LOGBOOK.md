@@ -162,5 +162,29 @@ Fungsi di atas untuk mengekstrak frame dalam durasi tertentu, sesuai dengan data
 ### 15 - 21
 - Belum mengerjakan apapun yang berhubungan dengan Tugas Akhir
 
-### 22 - 28
+### 22 - 30
 - Mulai mengerjakan revisi Tugas Akhir
+
+## Juli 2025
+### 01 - 05
+- Melakukan bimbingan revisi seminar proposal dengan Pak Martin.
+
+### 06 - 12
+- Melakukan bimbingan penulisan laporan dan revisi seminar proposal dengan Bu Leslie.
+
+### 13 - 19
+- Menyelesaikan revisi seminar proposal dari catatan pak Indro
+- Awalnya diminta perbandingan jumlah parameter dan flops antara model yang dikembangkan dengan model penelitian terdahulu. Penelitian ini bertipe Post teori. Pengukuran jumlah parameter dari torch.summary, pengukuran flops dari “epikorn” punya facebook untuk menghitung berapa floping point operation. Jadi pengukuran efisiensi menggunakan perbandingan jumlah parameter dan flopping point, sementara pengukuran efektifitas menggunakan confusion matrix (akurasi). (kemarin disarankan mempelajari “FVcore flops”). 
+- Ditanya pak indra:  apakah tujuan penelitian saya itu merancang kerangka kerja baru atau sekedar penerapan suatu algorithm untuk teknologi deteksi posisi jatuh saja? 
+- Lalu singgung bahwa penelitian saya hanya sebatas modelling, tidak sampai deployment pada alat IOT atau semacamnya. Jika begitu, maka tidak perlu ada pengukuran efisiensi, cukup tampilkan dan bahas nilai confusion matrix nya modelmu saja, tidak perlu ada perbandingan, namun tetap perlu melakukan kajian teori / kajian Pustaka saja, kenapa saya memakai Metodi ini dibandingkan Metode yang lain, kenapa saya menggunakan teknologi itu
+- Penelitian yang sebatas modelling, biasanya hanya berfokus pada metrix performance yang berkaitan dengan efektifitas. Karena nanti ada Teknik nya lagi misalkan ternyata modelnya terlalu berat sehingga perlu teknik untuk mengurangkan nya saat deployment.
+- Jelaskan di bab 3 pakai bagan, batasannya sampai mana. 
+- Saya perlu melakukan ”data understanding”. Harus didata secara spesifik kegiatan subjek dalam scene video, misal scene org jalan berapa kali, duduk berapa kali, berbaring di Kasur berapa kali, begitu juga dengan kegiatan jatuh, misal “jatuh dari berdiri” Ganti sebutanya kayak merunduk berapa kali, “jatuh dari kursi” harus diganti juga istilahnya berapa kali, “jatuh dari berjalan” harus diganti juga istilahnya berapa kali.
+- Berbaring harus dianggap sebagai jatuh, kecuali berbaring di Kasur. Hal itu karena terdapat kemungkinan besar frame yang didapat adalah keadaan hampir atau berbaring penuh, lalu seandainya dideploy, pasti frame yang akan diproses per detik itu paling tidak 3 frame (project pak indra dengan pihak korea Selatan aja segitu). Jika 30 frame yang diproses dalam 1 detik maka alatnya pasti jebol, rusak. Untuk sekarang, silahkan deskripsikan aktivitas dan label sesuka saya, misal berbaring di lantai sebagai jatuh, berbaring di Kasur sebagai tidak jatuh. Mungkin buat statistic saja
+- Perlu ditambahkan penjelasan mengenai transfer learning, “zero sub” dan fine-tuning di bab 2 karena penggunaan pre-train model dari kerangka kerja mediapipe untuk mendeteksi pose landmark sudah termasuk ke transfer learning kategori zero-sub. Tambahin dulu di laporan subbab 2.2.5 transfer learning yang juga membahas sedikit tentang “zero sub” dan fine tuning
+- Melakukan bimbingan penulisan laporan dengan bu Leslie.
+
+### 20 - 26
+- Menyelesaikan revisi seminar proposal dari catatan Pak Andre
+- Perbaikan minor selanjutnya hanya menambahkan penjelasan sub judul tiap bab pada subbab sistematika penulisan. 
+
