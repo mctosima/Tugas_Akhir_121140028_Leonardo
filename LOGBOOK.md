@@ -188,3 +188,18 @@ Fungsi di atas untuk mengekstrak frame dalam durasi tertentu, sesuai dengan data
 - Menyelesaikan revisi seminar proposal dari catatan Pak Andre
 - Perbaikan minor selanjutnya hanya menambahkan penjelasan sub judul tiap bab pada subbab sistematika penulisan. 
 
+### 27 - 31
+- Belum mengerjakan apapun yang berhubungan dengan Tugas Akhir
+
+
+## Agustus 2025
+### 01 - 02
+- Belum mengerjakan apapun yang berhubungan dengan Tugas Akhir
+
+### 03 - 09
+- Mempelajari kembali alur program akhir dengan membuat beberapa flowchart di Notion Tugas Akhir
+
+### 10 - 16
+- Menambahkan rancangan ekstraksi baru dalam file meta excel (belum selesai)
+- Menambahkan fitur pendataan frame yang tidak dapat diekstrak menjadi skeleton dalam program "extract_skeleton.py"
+- Menambahkan program baru "dataset_rebalancing.py" untuk menyamakan total data masing-masing kelas
