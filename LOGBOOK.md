@@ -203,3 +203,38 @@ Fungsi di atas untuk mengekstrak frame dalam durasi tertentu, sesuai dengan data
 - Menambahkan rancangan ekstraksi baru dalam file meta excel (belum selesai)
 - Menambahkan fitur pendataan frame yang tidak dapat diekstrak menjadi skeleton dalam program "extract_skeleton.py"
 - Menambahkan program baru "dataset_rebalancing.py" untuk menyamakan total data masing-masing kelas
+
+### 17 - 23
+- program ekstrak frame dijalankan kembali, video fall_1 dihilangkan karena terdapat 2 orang, penambahan rentang waktu baru untuk ADL.
+
+### 24 - 31
+- dalam excel meta, data untuk ekstrak ADL sudah disamakan jumlahnya (54 x 5 = 270) dengan jumlah Fall (267 karena ada 3 cam yang hilang).
+- program train model sudah ditambahkan fitur variasi kombinasi hyperparameter. (saat ini batch_size, learning_rate, dropout_rate, residuals)
+- pembuatan fitur pencatatan hasil pelatihan (log_training.py)
+- diskusi dengan pak martin terkait permasalahan variasi fitur yang mengakibatkan pelatihan yang terlalu lama.
+- lakukan ablation study: melakukan pengujian berupa pelatihan dengan variasi hyperparameter yang dibatasi (sedikit saja) menggunakan 1 fold untuk melihat pengaruh tiap hyperparameter terhadap pelatihan dan menemukan kombinasi hyperparameter terbaik.
+- gunakan early stopping pada pelatihan, jangan berpatokan pada jumlah epoch
+- tambahkan random_seed pada penghapusan data ADL
+- tambahkan fitur variasi optimizer pada pelatihan.
+  - rencara ablation study:
+    - perbandingan optimizer
+    - perbandingan batch_size
+    - perbandingan learning_rate
+    - perbandingan num_layers
+- penambahan random_seed pada program dataset_rebalancing.py
+- program utama improved_train_gcn_kfold_v2.py berubah nama menjadi train_gcn_kfold.py
+- total data awal ADL: 54 (ada beberapa skenario dalam 1 durasi)
+    - jalan: 13
+    - duduk-diri: 7
+    - diri-duduk: 16
+    - diri-merunduk: 11
+    - duduk-merunduk: 4
+    - duduk (wheelchair): 3
+    - ganti baju: 4
+- penambahan fitur variasi optimizer
+- penambahan early stopping
+
+## September 2025
+### 01 - 06
+- rencana menambahkan random seed pada ekstrak frame non-fall saja karena durasi not-fall jauh lebih lama daripada fall
+- mengaktifkan wandb dan running program utama untuk testing kombinasi hyperparameter optimizer, log training yang sekarang dipisah per fold, dan grafik pelatihan wandb (grafik saat ini cuma titik yang merupakan rata rata atau nilai akhir pelatihan)
