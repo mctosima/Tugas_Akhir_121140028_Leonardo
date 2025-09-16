@@ -258,3 +258,14 @@ Fungsi di atas untuk mengekstrak frame dalam durasi tertentu, sesuai dengan data
     - perubahannya di program func_distance_feature.py (mayor), extract_skeleton.py (minor, baris 113), func_lm_to_graph.py (minor, baris 41-42, 76-77), train_gcn_kfold.py (minor, 732)
 - melakukan pelatihan model dengan skeleton 2 dimensi, hasilnya masih sulit dibandingkan, perlu dilakukan perbandingan dalam 1 project wandb
 - melakukan data rebelancing pada data skeleton 3 dimensi dan 2 dimensi untuk pelatihan ulang dan perbandingan dataset
+
+### 14 - 20
+- melakukan perbandingan pelatihan model terhadap data skeleton 3 dimensi dan 2 dimensi dapat dilihat pada https://wandb.ai/leonardosirait80-itera/fall-detection-5Fold-2-dan-3-dimensi/workspace?nw=nwuserleonardosirait80
+- hasil perbandingan tersebut terlihat bahwa data 3 dimensi lebih baik daripada data 2 dimensi.
+- melakukan albation study pada kelima hyperparameter
+    - percobaan variasi terbaik dari masing masing hypperparameter: https://wandb.ai/leonardosirait80-itera/fall-detection-5Fold-ablation-study-iseng?nw=nwuserleonardosirait80
+    - percobaan variasi dropout: https://wandb.ai/leonardosirait80-itera/fall-detection-5Fold-ablation-study-dropout?nw=nwuserleonardosirait80
+    - percobaan variasi learning rate: https://wandb.ai/leonardosirait80-itera/fall-detection-5Fold-ablation-study-learning_rate?nw=nwuserleonardosirait80
+    - percobaan variasi batch size: https://wandb.ai/leonardosirait80-itera/fall-detection-5Fold-ablation-study-batch_size?nw=nwuserleonardosirait80
+    - percobaan variasi optimizer: https://wandb.ai/leonardosirait80-itera/fall-detection-5Fold-ablation-study-optimizer?nw=nwuserleonardosirait80
+    - percobaan variasi weight decay: https://wandb.ai/leonardosirait80-itera/fall-detection-5Fold-ablation-study-weight_decays?nw=nwuserleonardosirait80
