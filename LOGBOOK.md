@@ -238,3 +238,23 @@ Fungsi di atas untuk mengekstrak frame dalam durasi tertentu, sesuai dengan data
 ### 01 - 06
 - rencana menambahkan random seed pada ekstrak frame non-fall saja karena durasi not-fall jauh lebih lama daripada fall
 - mengaktifkan wandb dan running program utama untuk testing kombinasi hyperparameter optimizer, log training yang sekarang dipisah per fold, dan grafik pelatihan wandb (grafik saat ini cuma titik yang merupakan rata rata atau nilai akhir pelatihan)
+
+### 07 - 13
+- melakukan ekstrak skeleton pada data:
+    - extracted_frames-with start time shift and no random seed + extract logs tahap 1 (gak jadi karena sama dengan data ke 2)
+    - extracted_frames-with start time shift for fall and no random seed + extract log tahap 2
+    - extracted_frames-with start time shift, random seed, extract log tahap 3
+    - extracted_frames-no time shift, add random seed, fix extract logs
+- telah melakukan ekstrak skeleton pada data:
+    - extracted_frames-with start time shift for fall and no random seed + extract log tahap 2
+    - extracted_frames-with start time shift, random seed, extract log tahap 3
+    - extracted_frames-no time shift, add random seed, fix extract logs
+- telah dilakukan pelatihan model terhadap ketiga dataset tersebut dan hasil nya dapat dilihat pada https://wandb.ai/leonardosirait80-itera/fall-detection-5Fold-perbandingan-3-jenis-dataset?nw=nwuserleonardosirait80
+- berdasarkan perbandingan dalam grafik aggregate, pemenangnya adalah dataset pertama (extracted_frames-with start time shift for fall and no random seed + extract log tahap 2)
+- saat ini saya kebingungan bagaimana cara mendukung data tersebut karena data tersebut adalah keberuntungan, tidak memakai random seed dan memakai start time shift.
+- percobaan selanjutnya adalah menghapus data z dari data skeleton, apakah skeleton 2D lebih baik daripada 3D.
+- pelajari Ablation study agar dapat meyakinkan bu leslie mengenai variasi hyperparameter yang di test 1 per 1, bukannya mencari kombinasi hyperparamter terbaik dari keseluruhan.
+- melakukan modifikasi program agar dapat melatih model menggunakan data skeleton 2 dimensi.
+    - perubahannya di program func_distance_feature.py (mayor), extract_skeleton.py (minor, baris 113), func_lm_to_graph.py (minor, baris 41-42, 76-77), train_gcn_kfold.py (minor, 732)
+- melakukan pelatihan model dengan skeleton 2 dimensi, hasilnya masih sulit dibandingkan, perlu dilakukan perbandingan dalam 1 project wandb
+- melakukan data rebelancing pada data skeleton 3 dimensi dan 2 dimensi untuk pelatihan ulang dan perbandingan dataset
