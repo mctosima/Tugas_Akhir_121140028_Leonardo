@@ -269,3 +269,26 @@ Fungsi di atas untuk mengekstrak frame dalam durasi tertentu, sesuai dengan data
     - percobaan variasi batch size: https://wandb.ai/leonardosirait80-itera/fall-detection-5Fold-ablation-study-batch_size?nw=nwuserleonardosirait80
     - percobaan variasi optimizer: https://wandb.ai/leonardosirait80-itera/fall-detection-5Fold-ablation-study-optimizer?nw=nwuserleonardosirait80
     - percobaan variasi weight decay: https://wandb.ai/leonardosirait80-itera/fall-detection-5Fold-ablation-study-weight_decays?nw=nwuserleonardosirait80
+- hasil diskusi dengan Bu Leslie
+    - terdapat masalah terkait pembahasan hasil ablation study nya. Kata bu leslie, saya harus menjelaskan hasil ablation study di bab 4 dengan analisis mendalam. Misal optimizer ada 3 varian, kau analisis mendalam ketiganya, cara kerjanya, perhitungannya, pengaruh nya dalam pelatihan. setiap penjelasan analisis tersebut harus didukung oleh penelitian terdahulu / paper. Lalu ada penjelasan lagi untuk hasil eksperimen.
+    - yang ditakutkan bu leslie, pengerjaan analisis mendalam tersebut akan memakan waktu yang lama
+    
+### 21 - 30
+- Mempelajari penyusunan BAB 4, menyusun hasil eksperimen ke dalam BAB 4
+- Mempelajari penyusunan BAB 5
+
+## Oktober 2025
+### 01 - 04
+- Hasil diskusi dengan Bu Leslie
+    - harus ditambahkan rancangan percobaan utama (5 Fold) dan percobaan tambahan (studi ablasi)
+    - harus ditambahkan teori studi ablasi di dasar teori di bab 2
+    - kedua rancangan percobaan tersebut harus rinci, fokus nya apa, dan sebagainya.
+    - perlu dibuat tabel penjabaran nilai hyperparameter default pada percobaan utama dan penjabaran variassi nilai hyperparameter di percobaan tambahan
+    - perlu ada perbaikan pada alur penelitian terutama pelatihan model
+
+### 05 - 11
+- Mengganti semua file png\jpg di latex menjadi pdf
+- Mempelajari ulang arsitektur model, membuat perbaikan ulang arsitektur model menggunakan arsitektur ResGCN (harus dipelajari lebih lanjut)
+- menambahkan tabel penjabaran nilai default dan variasi hyperparameter di rancangan evaluasi model (BAB 3)
+- mengevaluasi ulang arsitektur model dalam program
+- mencari alasan penggunaan tiap nilai hyperparamter yang digunakan.
