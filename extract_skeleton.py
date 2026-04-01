@@ -17,15 +17,18 @@ import numpy as np
 import cv2
 import os
 from glob import glob
-import matplotlib.pyplot as plt
 from typing import List, Optional, Dict, Tuple
 import mediapipe as mp
 import json
+import pandas as pd
+import openpyxl
 
 # Configuration Constants
 DATASET_PATH = os.path.join(os.getcwd(), 'extracted_frames')
 SKELETON_SAVE_PATH = os.path.join(os.getcwd(), 'data-skeleton')
 SKELETON_PREVIEW = os.path.join(os.getcwd(), 'skeleton-preview')
+# Path untuk menyimpan file Excel yang berisi path gambar yang gagal
+FAILED_IMAGES_PATH = 'data-skeleton/failed_images.xlsx'
 
 # Skeleton connection configuration
 SKELETON_CONNECTIONS = [
@@ -191,6 +194,39 @@ def draw_skeleton(image_path: str, landmarks: Dict[str, Dict[str, float]]) -> No
     
     # Save image
     cv2.imwrite(new_path, image)
+    
+
+def load_failed_images() -> List[str]:
+    """
+    Memuat daftar path gambar yang gagal diekstrak dari file Excel.
+    
+    Returns:
+        List[str]: Daftar path gambar yang gagal diekstrak
+    """
+    if os.path.exists(FAILED_IMAGES_PATH):
+        # Membaca file Excel dan mengembalikan daftar path yang gagal
+        df = pd.read_excel(FAILED_IMAGES_PATH)
+        return df['image_path'].tolist()
+    else:
+        print("File Excel tidak ditemukan, membuat file baru.")
+        df = pd.DataFrame(columns=['image_path'])
+        df.to_excel(FAILED_IMAGES_PATH, index=False)
+        return []
+
+def save_failed_image(image_path: str) -> None:
+    """
+    Menyimpan path gambar yang gagal diekstrak ke dalam file Excel.
+    
+    Args:
+        image_path (str): Path gambar yang gagal diproses
+    """
+    # Jika file Excel sudah ada, kita baca dan tambahkan baris baru
+    df = pd.read_excel(FAILED_IMAGES_PATH)
+    new_row = pd.DataFrame({'image_path': [image_path]})
+    df = pd.concat([df, new_row], ignore_index=True)
+
+    # Simpan kembali ke Excel
+    df.to_excel(FAILED_IMAGES_PATH, index=False)
 
 def main() -> None:
     """
@@ -209,8 +245,12 @@ def main() -> None:
         ValueError: If no images found in dataset
     """
     if not os.path.exists(DATASET_PATH):
-        raise FileNotFoundError('Dataset not found. Please download the dataset from Kaggle.')
+        raise FileNotFoundError('Dataset not found.')
+
+    # Muat daftar gambar yang gagal diproses
+    failed_images = load_failed_images()
     
+    # Muat daftar gambar yang dapat diproses
     image_paths = get_image_paths()
     
     if not image_paths:
@@ -220,12 +260,20 @@ def main() -> None:
     
     # Process each image and extract skeleton
     for path in image_paths:
+        # Cek apakah gambar sudah ada dalam daftar gagal
+        if path in failed_images:
+            print(f"Gambar {path} sudah gagal diproses sebelumnya, melewati.")
+            continue
+        
         landmarks = extract_skeleton(path)
         if landmarks:
+            # Jika berhasil, simpan landmark ke dalam file json
             save_landmark(path, landmarks)
             draw_skeleton(path, landmarks)
-            
-        # break # remove/activate this line to process all images/stop after one image
+        else:
+            # Jika gagal, simpan path gambar ke dalam file Excel
+            print(f"Gambar {path} gagal diproses, menambahkannya ke daftar gagal.")
+            save_failed_image(path)
     
 
 if __name__ == '__main__':

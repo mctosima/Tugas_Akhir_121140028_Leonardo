@@ -38,8 +38,8 @@ def landmarks_to_graph(landmarks, label, skeleton_edges):
     ]
     
     for name in landmark_names:
-        landmark = landmarks.get(name, {"x": 0.0, "y": 0.0, "z": 0.0})
-        node_features.append([landmark['x'], landmark['y'], landmark['z']])
+        landmark = landmarks.get(name, {"x": 0.0, "y": 0.0, "z": 0.0}) # , "z": 0.0
+        node_features.append([landmark['x'], landmark['y'], landmark['z']]) # , landmark['z']
     
     x = torch.tensor(node_features, dtype=torch.float)
     
@@ -73,8 +73,8 @@ def landmarks_to_graph_with_features(landmarks, label, skeleton_edges):
     ]
     
     for name in landmark_names:
-        landmark = landmarks.get(name, {"x": 0.0, "y": 0.0, "z": 0.0})
-        node_features.append([landmark['x'], landmark['y'], landmark['z']])
+        landmark = landmarks.get(name, {"x": 0.0, "y": 0.0, "z": 0.0}) # , "z": 0.0
+        node_features.append([landmark['x'], landmark['y'], landmark['z']]) # , landmark['z']
     
     x = torch.tensor(node_features, dtype=torch.float)
     

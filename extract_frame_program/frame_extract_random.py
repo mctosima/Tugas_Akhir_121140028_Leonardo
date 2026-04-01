@@ -10,7 +10,7 @@ def time_to_seconds(tstr):
     parts = [int(p) for p in tstr.split(':')]
     return parts[-1] + (parts[-2] * 60) + (parts[-3] * 3600 if len(parts) == 3 else 0)
 
-def adjust_start_sec(start_sec, end_sec, percentage_base, max_time):
+def adjust_start_sec(start_sec, end_sec, percentage_base, scale_control):
     """
     Menggeser start_sec mendekati end_sec dengan pergeseran yang bergantung pada selisih waktu.
     Semakin besar selisih (end_sec - start_sec), semakin besar pergeseran start_sec.
@@ -21,7 +21,7 @@ def adjust_start_sec(start_sec, end_sec, percentage_base, max_time):
     # Tentukan faktor pengali berdasarkan panjang rentang waktu (time_diff)
     # Rentang waktu kecil: pergeseran kecil. Rentang waktu besar: pergeseran besar.
     if time_diff > 2:
-        scaling_factor = percentage_base * (time_diff / max_time)
+        scaling_factor = percentage_base * (time_diff / scale_control)
     
     # Pastikan scaling_factor tidak lebih kecil dari percentage_base (untuk rentang waktu yang sangat kecil)
     # scaling_factor = max(scaling_factor, percentage_base)
@@ -105,7 +105,7 @@ def main():
         end_sec = time_to_seconds(str(end_t))
         if label == 'fall':
             # Sesuaikan rentang start berdasarkan persentase (misalnya 30%)
-            start_sec = adjust_start_sec(start_sec, end_sec, 30, 15)
+            start_sec = adjust_start_sec(start_sec, end_sec, 25, 15)
 
         
         label_folder = os.path.join(base_output_dir, label)
@@ -118,7 +118,7 @@ def main():
             end_sec=end_sec,
             output_dir=output_dir,
             label=label,
-            num_frames=30 if label == 'fall' else 110
+            num_frames=30
         )
 
 if __name__ == "__main__":

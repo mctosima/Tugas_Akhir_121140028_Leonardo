@@ -2,20 +2,23 @@ import torch
 from torch.optim import AdamW
 from torch.nn import BCELoss
 from model.gcn_model import ImprovedGCN
-from kfold_dataset import FallDetectionDatasetKFold
+from k_fold_datareader import FallDetectionDatasetKFold 
 from torch_geometric.loader import DataLoader
 from torch.optim.lr_scheduler import StepLR
 from utils import check_set_gpu
 import numpy as np
-from sklearn.metrics import classification_report
+from sklearn.metrics import classification_report, confusion_matrix
 import wandb
 from datetime import datetime
 import os
-from k_fold_datareader import generate_kfold_splits, save_kfold_splits, verify_fold_separation
+from k_fold_generator import generate_kfold_splits, save_kfold_splits, verify_fold_separation
+import itertools
+from log_training import log_training_data_to_excel
 
 # Set dataset path
 DATASET_PATH = os.path.join(os.getcwd(), 'data-skeleton')
 
+# Set random seeds for reproducibility
 def set_seeds(seed=42):
     """Set random seeds for reproducibility."""
     torch.manual_seed(seed)
@@ -24,7 +27,44 @@ def set_seeds(seed=42):
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
 
-def train_sub_epoch(model, loader, criterion, optimizer, device, fold_number=None, wandb_sync=False):
+# Early Stopping class
+class EarlyStopping:
+    """Early stopping sederhana.
+
+
+    Args:
+    patience: how many epochs without any improve to stop.
+    min_delta: minimum difference in improvement to be considered as an improvement.
+    mode: "max" or "min", whether to look for maximum or minimum in the monitored metric.
+    """
+
+    def __init__(self, patience=10, min_delta=0.0, mode="max"):
+        self.patience = patience
+        self.min_delta = min_delta
+        assert mode in ("max", "min")
+        self.mode = mode
+        self.best = None
+        self.num_bad = 0
+
+
+    def step(self, current: float) -> bool:
+        if self.best is None:
+            self.best = current
+            self.num_bad = 0
+            return False
+        improved = (
+            current > self.best + self.min_delta
+            if self.mode == "max"
+            else current < self.best - self.min_delta
+        )
+        if improved:
+            self.best = current
+            self.num_bad = 0
+            return False
+        self.num_bad += 1
+        return self.num_bad > self.patience
+
+def train_epoch(model, loader, criterion, optimizer, device, epoch_idx=None, wandb_sync=False, wandb_prefix=""):
     model.train()
     total_loss = 0
     predictions = []
@@ -40,32 +80,28 @@ def train_sub_epoch(model, loader, criterion, optimizer, device, fold_number=Non
         optimizer.step()
         
         total_loss += loss.item() * batch.num_graphs
-        batch_preds = (out.detach().cpu().numpy() > 0.5).astype(float)
+        batch_preds = (out.detach().cpu().numpy() > 0.5).astype(int) 
         predictions.extend(batch_preds)
-        labels.extend(batch.y.cpu().numpy())
-    
+        labels.extend(batch.y.cpu().numpy().astype(int))
+
     avg_loss = total_loss / len(loader.dataset)
     metrics = classification_report(labels, predictions, output_dict=True, zero_division=0)
-    
-    # if wandb_sync:
-    #     log_dict = {
-    #         "train_loss": avg_loss,
-    #         "train_accuracy": metrics['accuracy'],
-    #         "train_precision": metrics['weighted avg']['precision'],
-    #         "train_recall": metrics['weighted avg']['recall'],
-    #         "train_f1": metrics['weighted avg']['f1-score'],
-    #         "epoch": epoch+1
-    #     }
-    #     if fold_number is not None:
-    #         log_dict[f"fold{fold_number}_train_loss"] = avg_loss
-    #         log_dict[f"fold{fold_number}_train_accuracy"] = metrics['accuracy']
-        
-    #     wandb.log(log_dict)
-        
+    print(f"keseluruhan metrics train: {metrics}")
+    if wandb_sync:
+        wandb.log(
+            {
+                f"{wandb_prefix}train_loss": avg_loss,
+                f"{wandb_prefix}train_accuracy": metrics["accuracy"],
+                f"{wandb_prefix}train_precision": metrics["weighted avg"]["precision"],
+                f"{wandb_prefix}train_recall": metrics["weighted avg"]["recall"],
+                f"{wandb_prefix}train_f1": metrics["weighted avg"]["f1-score"],
+                "epoch": epoch_idx,
+            }
+        )
     
     return avg_loss, metrics
 
-def validate_sub_epoch(model, loader, criterion, device, fold_number=None, wandb_sync=False):
+def validate_epoch(model, loader, criterion, device, epoch_idx=None, wandb_sync=False, wandb_prefix=""):
     model.eval()
     total_loss = 0
     predictions = []
@@ -79,38 +115,69 @@ def validate_sub_epoch(model, loader, criterion, device, fold_number=None, wandb
             loss = criterion(out, batch.y)
             
             total_loss += loss.item() * batch.num_graphs
-            batch_preds = (out.cpu().numpy() > 0.5).astype(float)
+            batch_preds = (out.cpu().numpy() > 0.5).astype(int) 
             predictions.extend(batch_preds)
-            labels.extend(batch.y.cpu().numpy())
-    
+            labels.extend(batch.y.cpu().numpy().astype(int)) 
+
     avg_loss = total_loss / len(loader.dataset)
     metrics = classification_report(labels, predictions, output_dict=True, zero_division=0)
+    print(f"keseluruhan metrics val: {metrics}")
+    # Calculate confusion matrix
+    cm = confusion_matrix(labels, predictions, labels=[0, 1])
     
-    # if wandb_sync:
-    #     log_dict = {
-    #         "val_loss": avg_loss,
-    #         "val_accuracy": metrics['accuracy'],
-    #         "val_precision": metrics['weighted avg']['precision'],
-    #         "val_recall": metrics['weighted avg']['recall'],
-    #         "val_f1": metrics['weighted avg']['f1-score'],
-    #         "epoch": epoch+1,
-    #     }
+    # Calculate metrics directly from confusion matrix
+    # This will be used to determine the "best" confusion matrix
+    try:
+        tn, fp, fn, tp = cm.ravel()
+        cm_accuracy = (tp + tn) / (tp + tn + fp + fn) if (tp + tn + fp + fn) > 0 else 0
+        cm_precision = tp / (tp + fp) if (tp + fp) > 0 else 0
+        cm_recall = tp / (tp + fn) if (tp + fn) > 0 else 0
+        cm_f1 = 2 * (cm_precision * cm_recall) / (cm_precision + cm_recall) if (cm_precision + cm_recall) > 0 else 0
         
-    #     if fold_number is not None:
-    #         log_dict[f"fold{fold_number}_val_loss"] = avg_loss
-    #         log_dict[f"fold{fold_number}_val_accuracy"] = metrics['accuracy']
-        
-    #     wandb.log(log_dict)
+        # Add these metrics to the metrics dictionary
+        metrics['cm_f1'] = cm_f1
+        metrics['cm_accuracy'] = cm_accuracy
+    except Exception as e:
+        print(f"Error calculating confusion matrix metrics: {e}")
+        metrics['cm_f1'] = 0
+        metrics['cm_accuracy'] = 0
     
-    return avg_loss, metrics
+    if wandb_sync:
+        wandb.log(
+            {
+            f"{wandb_prefix}val_loss": avg_loss,
+            f"{wandb_prefix}val_accuracy": metrics["accuracy"],
+            f"{wandb_prefix}val_precision": metrics["weighted avg"]["precision"],
+            f"{wandb_prefix}val_recall": metrics["weighted avg"]["recall"],
+            f"{wandb_prefix}val_f1": metrics["weighted avg"]["f1-score"],
+            f"{wandb_prefix}avg_cm_accuracy": metrics["cm_accuracy"],
+            f"{wandb_prefix}avg_cm_f1": metrics["cm_f1"],
+            "epoch": epoch_idx,
+            }
+        )
+    
+    return avg_loss, metrics, cm
 
-def save_model(model, run_name, epoch, val_score, save_dir='pth'):
+def save_model(model, run_name, fold, epoch, val_score, save_dir='pth'):
     """Save model and return the saved path"""
     save_dir = os.path.join(os.getcwd(), save_dir)
     os.makedirs(save_dir, exist_ok=True)
-    path = os.path.join(save_dir, f"{run_name}_epoch{epoch}_val{val_score:.4f}.pth")
+    path = os.path.join(save_dir, f"{run_name}_fold{fold}_epoch{epoch}_val{val_score:.4f}.pth")
     torch.save(model.state_dict(), path)
     return path
+
+def save_checkpoint(model, optimizer, scheduler, epoch, config, path):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    torch.save(
+        {
+            "model_state": model.state_dict(),
+            "optimizer_state": optimizer.state_dict(),
+            "scheduler_state": scheduler.state_dict() if scheduler is not None else None,
+            "epoch": epoch,
+            "config": config,
+        },
+        path,
+    )
 
 def manage_saved_models(new_path, top_model_paths, max_saved=3):
     """Manage the saved model files, keeping only the top performing ones"""
@@ -127,55 +194,573 @@ def manage_saved_models(new_path, top_model_paths, max_saved=3):
     
     return sorted_paths[:max_saved]
 
-def train_fold(model, criterion, optimizer, fold_number, config, device, train_loaders, val_loaders, fold_train_metrics, fold_val_metrics, wandb_sync=False):
-    """Train a model for a specific fold in one epoch"""
+def train_single_fold(fold_number, config, device, wandb_sync=False):
+    """Train a model for a specific fold"""
     set_seeds(config['seed'])
     
-    # Load dataset for this fold (no need to load repeatedly per epoch)
-    train_loader = train_loaders[fold_number - 1]  # Access the pre-loaded fold data
-    val_loader = val_loaders[fold_number - 1]      # Access the pre-loaded fold data
+    # Initialize model
+    model = ImprovedGCN(
+        num_node_features=config['num_node_features'], 
+        hidden_channels=config['hidden_channels'],
+        dropout_rate=config['dropout_rate'],
+        residual=config['residual'],
+        seed=config['seed']
+    )
     
-    # Train and validate for each fold in this epoch
-    print(f"\nFold {fold_number}")
-    fold_train_loss, fold_train_metric = train_sub_epoch(model, train_loader, criterion, optimizer, device, fold_number, wandb_sync)
-    fold_val_loss, fold_val_metric = validate_sub_epoch(model, val_loader, criterion, device, fold_number, wandb_sync)
+    model = model.to(device)
+    criterion = BCELoss()
+    param_group = param_groups_with_weight_decay(model, config['weight_decay'])
+    optimizer = build_optimizer(
+        config['optimizer'], 
+        param_group, 
+        lr=config['learning_rate'], 
+        weight_decay=config['weight_decay']
+        # contoh extra: momentum utk RMSprop, betas utk Lion
+        # momentum=0.0, alpha=0.99, eps=1e-8, centered=False,
+        # betas=(0.9, 0.99),
+        )
+    scheduler = StepLR(optimizer, step_size=config['scheduler_step_size'], gamma=config['scheduler_gamma'])
+
+    # Early stopping setup (monitor val_f1 or val_accuracy)
+    monitor_metric = config.get("monitor_metric", "val_accuracy") # 'val_f1' | 'val_accuracy' | 'val_loss'
+    mode = "max" if monitor_metric in ("val_accuracy", "val_f1") else "min"
+    early_stopper = EarlyStopping(
+        patience=config.get("early_stopping_patience", 10),
+        min_delta=config.get("early_stopping_min_delta", 0.0),
+        mode=mode,
+    )
+
+    # Load dataset for this fold
+    train_dataset = FallDetectionDatasetKFold(fold_number=fold_number, is_train=True)
+    val_dataset = FallDetectionDatasetKFold(fold_number=fold_number, is_train=False)
     
-    fold_train_metrics.append(fold_train_metric)
-    fold_val_metrics.append(fold_val_metric)
+    train_loader = DataLoader(train_dataset, batch_size=config['batch_size'], shuffle=True)
+    val_loader = DataLoader(val_dataset, batch_size=config['batch_size'], shuffle=False)
+    
+    print(f"\n{'='*20} Training Fold {fold_number} {'='*20}")
+    
+    # Initialize best metrics and saved models list for this fold
+    best_val_accuracy = 0
+    best_val_f1 = 0
+    best_val_epoch = 0
+    best_confusion_matrix = None
+    top_model_paths = []
+    
+    # preparing data log
+    # Data will saved in Excel
+    log_data = []
+    best_model_path = None 
+    
+    # history per-epoch untuk dikembalikan (buat agregasi & plot gabungan)
+    epoch_history = []
 
-    # Print the results for each fold
-    print(f"Fold {fold_number} Train\nLoss: {fold_train_loss:.4f},\nAccuracy: {fold_train_metric['accuracy']:.4f},\nPrecision: {fold_train_metric['weighted avg']['precision']:.4f},\nRecall: {fold_train_metric['weighted avg']['recall']:.4f},\nF1: {fold_train_metric['weighted avg']['f1-score']:.4f}")
-    print(f"\nFold {fold_number} Validation\nLoss: {fold_val_loss:.4f},\nAccuracy: {fold_val_metric['accuracy']:.4f},\nPrecision: {fold_val_metric['weighted avg']['precision']:.4f}\nRecall: {fold_val_metric['weighted avg']['recall']:.4f},\nF1: {fold_val_metric['weighted avg']['f1-score']:.4f}")
+    # checkpoint dirs
+    ckpt_base = os.path.join(
+    config.get("checkpoint_dir", "checkpoints"), f"{config['run_name']}", f"fold{fold_number}"
+    )
+    os.makedirs(ckpt_base, exist_ok=True)
+    
+    # Training loop for this fold
+    for epoch in range(config['epochs']):
+        print(f"\nEpoch {epoch+1}/{config['epochs']}")
+        
+        prefix = f"fold{fold_number}/"
+        
+        # Train and validate
+        train_loss, train_metrics = train_epoch(
+            model, 
+            train_loader, 
+            criterion, 
+            optimizer, 
+            device, 
+            epoch_idx=epoch + 1, 
+            wandb_sync=wandb_sync, 
+            wandb_prefix=prefix
+            )
+    
+        val_loss, val_metrics, val_cm = validate_epoch(
+            model, 
+            val_loader, 
+            criterion, 
+            device, 
+            epoch_idx=epoch + 1,
+            wandb_sync=wandb_sync,
+            wandb_prefix=prefix
+        )
 
-    return
+        # Determine if this is the best model so far (using F1 score as primary metric)
+        current_f1 = val_metrics['weighted avg']['f1-score']
+        current_accuracy = val_metrics['accuracy']
+
+        # nilai monitor untuk early stopping
+        monitor_value = (
+            current_accuracy
+            if monitor_metric == "val_accuracy"
+            else current_f1
+            if monitor_metric == "val_f1"
+            else val_loss
+        )
+
+        is_best = False
+        # First Prioritize by accuracy
+        if current_accuracy > best_val_accuracy:
+            best_val_accuracy = current_accuracy
+            best_val_f1 = current_f1
+            best_val_epoch = epoch + 1
+            best_confusion_matrix = val_cm.copy()
+            is_best = True
+        # if accuracy are equal, then look at F1 score
+        elif abs(current_accuracy - best_val_accuracy) < 1e-6 and current_f1 > best_val_f1:
+            best_val_f1 = current_f1
+            best_val_epoch = epoch + 1
+            best_confusion_matrix = val_cm.copy()
+            is_best = True
+
+        # checkpoint last (tiap epoch)
+        save_checkpoint(
+            model,
+            optimizer,
+            scheduler,
+            epoch + 1,
+            config,
+            path=os.path.join(ckpt_base, "last.pth"),
+        )
+
+        # Save model
+        model_path = save_model(
+            model, config['run_name'], fold_number, epoch + 1, val_metrics['accuracy']
+            )
+        if is_best:
+            best_model_path = os.path.join(ckpt_base, "best.pth")
+            save_checkpoint(
+                model,
+                optimizer,
+                scheduler,
+                epoch + 1,
+                config,
+                path=best_model_path,
+            )
+            print(f"New best model saved: {best_model_path}")
+            
+        top_model_paths = manage_saved_models(model_path, top_model_paths)
+        
+        # Print metrics
+        print(f"Train Loss: {train_loss:.4f}, Accuracy: {train_metrics['accuracy']:.4f}")
+        print(f"Val Loss: {val_loss:.4f}, Accuracy: {val_metrics['accuracy']:.4f}")
+        print(f"Precision: {val_metrics['weighted avg']['precision']:.4f}, " +
+              f"Recall: {val_metrics['weighted avg']['recall']:.4f}, " +
+              f"F1: {val_metrics['weighted avg']['f1-score']:.4f}")
+        
+        if is_best:
+            print(f"👉 New best model Accuracy: ({best_val_accuracy:.4f}, F1: {best_val_f1:.4f})")
+        
+        # Update learning rate
+        scheduler.step()
+        
+        # history for cross fold / combined fold
+        epoch_history.append(
+            {
+                "epoch": epoch + 1,
+                "train_loss": float(train_loss),
+                "val_loss": float(val_loss),
+                "train_accuracy": float(train_metrics['accuracy']),
+                "val_accuracy": float(val_metrics['accuracy']),
+                "val_f1": float(val_metrics['weighted avg']['f1-score']),
+            }
+        )
+        
+        # Menambahkan data pelatihan ke dalam log_data
+        log_data.append({
+            'optimizer': config['optimizer'],
+            'fold': fold_number,
+            'epoch': epoch + 1,
+            'batch_size': config['batch_size'],
+            'learning_rate': config['learning_rate'],
+            'weight_decay': config['weight_decay'],
+            'dropout_rate': config['dropout_rate'],
+            'residual': config['residual'],
+            'train_loss': train_loss,
+            'train_accuracy': train_metrics['accuracy'],
+            'val_loss': val_loss,
+            'val_accuracy': val_metrics['accuracy'],
+            'val_precision': val_metrics['weighted avg']['precision'],
+            'val_recall': val_metrics['weighted avg']['recall'],
+            'val_f1': val_metrics['weighted avg']['f1-score'],
+            'best_model_path': best_model_path,
+            'confusion_matrix': str(best_confusion_matrix) if best_confusion_matrix is not None else None,
+        })
+    
+        # cek early stopping 
+        if early_stopper.step(monitor_value):
+            print(f"Early stopping on fold {fold_number} at epoch {epoch + 1} monitor: {monitor_metric}.")
+            break
+    
+    # Log data ke Excel
+    log_training_data_to_excel(log_data, f"training_log_{config['run_name']}_fold{fold_number}.xlsx")
+    
+    # Print final results for this fold
+    print(f"\nFold {fold_number} Best Results:")
+    print(f"Best Validation Accuracy: {best_val_accuracy:.4f} (Epoch {best_val_epoch})")
+    print(f"Best F1 Score: {best_val_f1:.4f}")
+    print(f"Best Confusion Matrix for Fold {fold_number}:")
+    print(best_confusion_matrix)
+    
+    return {
+        'fold': fold_number,
+        'best_accuracy': best_val_accuracy,
+        'best_f1': best_val_f1,
+        'best_epoch': best_val_epoch,
+        'best_confusion_matrix': best_confusion_matrix,
+        'top_models': top_model_paths,
+        'best_model_path': best_model_path,
+        'epoch_history': epoch_history
+    }
+
+def run_grid_search(config, device, wandb_sync=False):
+    # Menghasilkan semua kombinasi hyperparameter yang mungkin
+    hyperparameter_combinations = itertools.product(
+        config['optimizers'],
+        config['batch_sizes'], 
+        config['learning_rates'],
+        config['weight_decays'],
+        config['dropout_rates'],
+        config['residuals'],
+    )
+    
+    # Menyimpan hasil terbaik dari grid search
+    best_val_accuracy = 0.0
+    best_combination = None
+    all_summaries = []
+    
+    # kumpulkan kurva per-kombinasi utk chart agregat (di run terpisah)
+    aggregate_combo_curves = []
+
+    # Menjalankan training untuk setiap kombinasi hyperparameter
+    for opt_name, batch_size, learning_rate, weight_decay, dropout_rate, residual in hyperparameter_combinations:
+        learning_rate = round(learning_rate / 3, 4) if opt_name.lower() == 'lion' else learning_rate
+        tag = f"{opt_name}_batch-size:{batch_size}_learning-rate:{learning_rate}_weight-decay:{weight_decay}_dropout-rate:{dropout_rate}_residual:{int(residual)}"
+        print(f"\nRunning with {tag}")
+        
+        # Update config dengan kombinasi yang akan dijalankan
+        current_config = config.copy()
+        current_config['batch_size'] = batch_size
+        current_config['learning_rate'] = learning_rate
+        current_config['dropout_rate'] = dropout_rate
+        current_config['residual'] = residual
+        current_config['optimizer'] = opt_name
+        current_config['weight_decay'] = weight_decay
+        current_config['run_name'] = f"{config['run_name']}_{tag}"
+
+        # Jika mode per-kombinasi, buat child run W&B
+        if wandb_sync and config.get("wandb_mode", "per_combo") == "per_combo":
+            combo_run = wandb.init(
+                entity=config.get("wandb_entity", None),
+                project=config.get("wandb_project", "fall-detection"),
+                name=current_config["run_name"],
+                group=config["run_name"],
+                config=current_config,
+                reinit="finish_previous",
+            )
+            # definisikan epoch sebagai step
+            wandb.define_metric("epoch")
+            wandb.define_metric("*", step_metric="epoch")
+        else:
+            combo_run = None
+
+        # Train each fold independently
+        fold_results = []
+        best_confusion_matrices = []
+        fold_histories = []
+        
+        #change this for testing 1 fold
+        for fold in range(1, 6):
+            # Train a separate model for each fold
+            result = train_single_fold(fold, current_config, device, wandb_sync)
+            fold_results.append(result)
+            best_confusion_matrices.append(result['best_confusion_matrix'])
+            fold_histories.append(result["epoch_history"])
+
+        # Average the best confusion matrices across all folds (warning if None)
+        valid_cms = [cm for cm in best_confusion_matrices if cm is not None]
+        if len(valid_cms) == 0:
+            print("WARNING: Tidak ada confusion matrix valid untuk kombinasi ini.")
+            if combo_run is not None:
+                combo_run.finish()
+            continue
+        avg_best_confusion_matrix = np.mean(valid_cms, axis=0)
+        
+        # Print summary of all folds
+        print("\n" + "="*50)
+        print("CROSS-VALIDATION SUMMARY")
+        print("="*50)
+        
+        # Calculate multiple metrics
+        accuracies = [result['best_accuracy'] for result in fold_results]
+        f1_scores = [result['best_f1'] for result in fold_results]
+        
+        mean_accuracy = float(np.mean(accuracies))
+        std_accuracy = float(np.std(accuracies))
+        mean_f1 = float(np.mean(f1_scores))
+        std_f1 = float(np.std(f1_scores))
+        
+        print(f"Mean Accuracy across folds: {mean_accuracy:.4f} ± {std_accuracy:.4f}")
+        print(f"Mean F1 Score across folds: {mean_f1:.4f} ± {std_f1:.4f}")
+        
+        print("\nBest Results by Fold:")
+        for result in fold_results:
+            print(f"Fold {result['fold']}: Accuracy = {result['best_accuracy']:.4f}, F1 = {result['best_f1']:.4f}, (Epoch {result['best_epoch']})")
+        
+        print("\nAverage of Best Confusion Matrices:")
+        print(avg_best_confusion_matrix)
+        
+        # Calculate metrics from the average confusion matrix
+        avg_tn, avg_fp, avg_fn, avg_tp = avg_best_confusion_matrix.ravel()
+        avg_accuracy = (avg_tp + avg_tn) / (avg_tp + avg_tn + avg_fp + avg_fn)
+        avg_precision = avg_tp / (avg_tp + avg_fp) if (avg_tp + avg_fp) > 0 else 0
+        avg_recall = avg_tp / (avg_tp + avg_fn) if (avg_tp + avg_fn) > 0 else 0
+        avg_f1 = 2 * (avg_precision * avg_recall) / (avg_precision + avg_recall) if (avg_precision + avg_recall) > 0 else 0
+        
+        print(f"\nMetrics from Average Confusion Matrix:")
+        print(f"Accuracy: {avg_accuracy:.4f}")
+        print(f"Precision: {avg_precision:.4f}")
+        print(f"Recall: {avg_recall:.4f}")
+        print(f"F1 Score: {avg_f1:.4f}")
+
+        if wandb_sync:
+            # log ringkasan kombinasi (tetap akan jadi 'titik')
+            wandb.log(
+                {
+                    f"{tag}/mean_accuracy": mean_accuracy,
+                    f"{tag}/mean_f1": mean_f1,
+                    f"{tag}/avg_cm_accuracy": float(avg_accuracy),
+                    f"{tag}/avg_cm_f1": float(avg_f1),
+                }
+            )
+
+        # update the best_combination if current combination gives a better result
+        if mean_accuracy > best_val_accuracy:
+            best_val_accuracy = mean_accuracy
+            best_combination = {
+            'optimizer': opt_name,
+            'batch_size': batch_size,
+            'learning_rate': learning_rate,
+            'weight_decay': weight_decay,
+            'dropout_rate': dropout_rate,
+            'residual': residual,
+            'tag': tag,
+            }  # save the best combination details
+        
+        # Print best model paths for each fold
+        print("\nBest Model Paths:")
+        for result in fold_results:
+            print(f"Fold {result['fold']}:")
+            for path in result['top_models']:
+                if "_BEST" in path:
+                    print(f"- 🌟 {path} (BEST)")
+                else:
+                    print(f"- {path}")
+        
+        # Save the average best confusion matrix to file for each combination
+        np.save(f'best_avg_confusion_matrix_{current_config["run_name"]}.npy', avg_best_confusion_matrix)
+        print(f"\nSaved average best confusion matrix to: best_avg_confusion_matrix_{current_config['run_name']}.npy")
+
+        # siapkan kurva agregat (mean across folds per epoch) untuk plot gabungan nanti
+        agg_curve = _aggregate_histories_across_folds(fold_histories)
+        aggregate_combo_curves.append({"series": tag, **agg_curve})
+
+
+        # selesai child run
+        if combo_run is not None:
+            combo_run.finish()
+
+        # save summary for W&B/return
+        combo_summary = {
+            'tag': tag,
+            'mean_accuracy': mean_accuracy,
+            'std_accuracy': std_accuracy,
+            'mean_f1': mean_f1,
+            'std_f1': std_f1,
+            'avg_cm_accuracy': float(avg_accuracy),
+            'avg_cm_f1': float(avg_f1),
+        }
+        all_summaries.append(combo_summary)
+
+    # Ringkasan akhir
+    if best_combination:
+        print(f"\nBest combination: {best_combination}")
+        print(f"Best validation accuracy: {best_val_accuracy:.4f}")
+    else:
+        print("No best combination found.")
+
+    # Buat run agregat khusus untuk chart gabungan lintas kombinasi (garis, bukan titik)
+    if wandb_sync and aggregate_combo_curves:
+        agg_run = wandb.init(
+            entity=config.get("wandb_entity", None),
+            project=config.get("wandb_project", "fall-detection"),
+            name=f"{config['run_name']}_AGG",
+            config={"parent": config["run_name"]},
+            reinit="finish_previous",
+        )
+        
+        table_acc = wandb.Table(columns=["epoch", "val_accuracy", "series"])
+        for combo in aggregate_combo_curves:
+            for e, v in zip(combo["epoch"], combo["val_accuracy"]):
+                table_acc.add_data(int(e), float(v), combo["series"])
+        plot_acc = wandb.plot.line(
+            table_acc, x="epoch", y="val_accuracy", title="Val Accuracy — mean across folds per combination", stroke="series"
+        )
+        wandb.log({"aggregate/val_accuracy": plot_acc})
+        
+        table_train_acc = wandb.Table(columns=["epoch", "train_accuracy", "series"])
+        for combo in aggregate_combo_curves:
+            for e, v in zip(combo["epoch"], combo["train_accuracy"]):
+                table_train_acc.add_data(int(e), float(v), combo["series"])
+        if len(table_train_acc.data) > 0:
+            plot_train_acc = wandb.plot.line(
+                table_train_acc, x="epoch", y="train_accuracy", title="Train Accuracy — mean across folds per combination", stroke="series"
+            )
+            wandb.log({"aggregate/train_accuracy": plot_train_acc})
+
+        # Table untuk val_f1
+        table_f1 = wandb.Table(columns=["epoch", "val_f1", "series"])
+        for combo in aggregate_combo_curves:
+            for e, v in zip(combo["epoch"], combo["val_f1"]):
+                table_f1.add_data(int(e), float(v), combo["series"])
+        plot_f1 = wandb.plot.line(
+            table_f1, x="epoch", y="val_f1", title="Val F1 — mean across folds per combination", stroke="series"
+        )
+        wandb.log({"aggregate/val_f1": plot_f1})
+
+        # Table untuk val_loss
+        table_loss = wandb.Table(columns=["epoch", "val_loss", "series"])
+        for combo in aggregate_combo_curves:
+            for e, v in zip(combo["epoch"], combo["val_loss"]):
+                table_loss.add_data(int(e), float(v), combo["series"])
+                plot_loss = wandb.plot.line(
+        table_loss, x="epoch", y="val_loss", title="Val Loss — mean across folds per combination", stroke="series"
+        )
+        wandb.log({"aggregate/val_loss": plot_loss})
+
+        agg_run.finish()
+
+    return {
+        'best_val_accuracy': best_val_accuracy,
+        'best_combination': best_combination,
+        'all_summaries': all_summaries,
+    }
+
+def param_groups_with_weight_decay(model, weight_decay):
+    """Pisahkan parameter yang tidak perlu weight decay (bias/Norm)."""
+    decay, no_decay = [], []
+    for name, p in model.named_parameters():
+        if not p.requires_grad:
+            continue
+        if p.ndim == 1 or name.endswith(".bias") or "norm" in name.lower() or "bn" in name.lower():
+            no_decay.append(p)
+        else:
+            decay.append(p)
+    return [
+        {'params': decay, 'weight_decay': weight_decay},
+        {'params': no_decay, 'weight_decay': 0.0},
+    ]
+
+def build_optimizer(name, params, lr, weight_decay, **extra):
+    name = name.lower()
+    if name == 'adamw':
+        return torch.optim.AdamW(params, lr=lr, weight_decay=weight_decay, **extra)
+    elif name == 'rmsprop':
+        # momentum/alpha/eps bisa di-tune via extra jika perlu
+        return torch.optim.RMSprop(params, lr=lr, weight_decay=weight_decay,
+                                   momentum=extra.get('momentum', 0.0),
+                                   alpha=extra.get('alpha', 0.99),
+                                   eps=extra.get('eps', 1e-8),
+                                   centered=extra.get('centered', False))
+    elif name == 'lion':
+        try:
+            from lion_pytorch import Lion  # pip install lion-pytorch
+        except ImportError as e:
+            raise ImportError("Lion belum terpasang. Jalankan: pip install lion-pytorch") from e
+        return Lion(params, lr=lr, weight_decay=weight_decay,
+                    betas=extra.get('betas', (0.9, 0.99)))
+    else:
+        raise ValueError(f"Optimizer '{name}' tidak dikenali.")
+
+# =====================
+# Grid search cross combination + combined logging
+# =====================
+def _aggregate_histories_across_folds(histories):
+    """histories: list of list-dict per-epoch. return dict(epoch->mean metrics)."""
+    if not histories:
+        return {"epoch": [], "val_accuracy": [], "train_accuracy": [], "val_f1": [], "val_loss": []}
+    max_len = max(len(h) for h in histories)
+    agg = {"epoch": [], "val_accuracy": [], "train_accuracy": [], "val_f1": [], "val_loss": []}
+    for e in range(max_len):
+        vals_vf1, vals_vloss, vals_vacc, vals_tacc = [], [], [], []
+        for h in histories:
+            if len(h) > e:
+                vals_vacc.append(h[e]["val_accuracy"])
+                vals_tacc.append(h[e]["train_accuracy"])
+                vals_vf1.append(h[e]["val_f1"])
+                vals_vloss.append(h[e]["val_loss"])
+        if len(vals_vacc) == 0:
+            continue
+        agg["epoch"].append(e + 1)
+        agg["val_accuracy"].append(float(np.mean(vals_vacc)))
+        agg["train_accuracy"].append(float(np.mean(vals_tacc)))
+        agg["val_f1"].append(float(np.mean(vals_vf1)))
+        agg["val_loss"].append(float(np.mean(vals_vloss)))
+
+    return agg
 
 def main(wandb_sync=False):
-    """Main function to run 5-fold cross-validation training"""
     set_seeds(42)
     
+        # 'epochs': 100,
+        # 'batch_sizes': [32, 64],
+        # 'learning_rates': [1e-3, 1e-4],
+        # 'weight_decays': [1e-5, 5e-4],
+        # 'optimizers': ['adamw', 'rmsprop', 'lion'],
+        # 'num_node_features': 3,
+        # 'hidden_channels': [64, 32, 32, 32, 32],
+        # 'dropout_rates': [0.3],
+        # 'residuals': [True],
+    
     config = {
-        'epochs': 10,
-        'batch_size': 32,
-        'learning_rate': 5e-4,
-        'weight_decay': 1e-5,
+        'epochs': 100,
+        'batch_sizes': [32],
+        'learning_rates': [1e-3],
+        'weight_decays': [1e-5],
+        'optimizers': ['adamw'],
         'num_node_features': 3,
-        'hidden_channels': [64, 128, 256, 128],
-        'dropout_rate': 0.1,
-        'residual': True,
+        'hidden_channels': [64, 32, 32, 32, 32],
+        'dropout_rates': [0.3],
+        'residuals': [True],
+        # scheduler perlu penyesuaian terhadap jumlah epoch (jika bisa cari nilai default)
         'scheduler_step_size': 20,
         'scheduler_gamma': 0.5,
         'seed': 42,
-        'run_name': f"5fold_{datetime.now().strftime('%Y%m%d%H%M%S')}"
+        'run_name': f"5fold_{datetime.now().strftime('%Y%m%d%H%M%S')}",
+        # --- Early Stopping & Checkpointing ---
+        "early_stopping_patience": 20,
+        "early_stopping_min_delta": 1e-4,
+        "monitor_metric": "val_accuracy", # atau 'val-f1' / 'val_loss'
+        "checkpoint_dir": "checkpoints",
+        # --- W&B ---
+        "wandb_mode": "per_combo", # 'per_combo' membuat 1 run per kombinasi agar kurva antar kombinasi bisa dibandingkan di UI
+        "wandb_project": "fall-detection-5Fold-fixed",
+        "wandb_entity": "leonardosirait80-itera",
     }
     
     device = check_set_gpu()
     
+    # Ensure KFold splits exist
     split_dir = 'splits'
     os.makedirs(split_dir, exist_ok=True)
     
     all_folds_exist = all(
         os.path.exists(os.path.join(split_dir, f'5fold_split_fold{fold}.json')) 
         for fold in range(1, 6)
+        # change this for testing 1 fold 
     )
     
     if not all_folds_exist:
@@ -188,104 +773,14 @@ def main(wandb_sync=False):
             print("All folds have proper separation between train and validation sets!")
         else:
             print("WARNING: Some folds have overlapping train and validation files.")
+            return
+        
+    summary = run_grid_search(config, device, wandb_sync=wandb_sync)
     
-    if wandb_sync:
-        wandb.init(
-            entity="mctosima",
-            project="fall-detection-code-slayer",
-            name=config['run_name'],
-            config=config
-        )
-
-
-    # Initialize model
-    model = ImprovedGCN(
-        num_node_features=config['num_node_features'], 
-        hidden_channels=config['hidden_channels'],
-        dropout_rate=config['dropout_rate'],
-        residual=config['residual'],
-        seed=config['seed']
-    )
-    
-    model = model.to(device)
-    criterion = BCELoss()
-    optimizer = AdamW(model.parameters(), lr=config['learning_rate'], weight_decay=config['weight_decay'])
-    scheduler = StepLR(optimizer, step_size=config['scheduler_step_size'], gamma=config['scheduler_gamma'])
-
-    # Initialize best metric trackers
-    best_accuracy = 0
-    best_precision = 0
-    best_recall = 0
-    best_accuracy_epoch = 0
-    best_precision_epoch = 0
-    best_recall_epoch = 0
-
-    # Initialize list to store paths of top models
-    top_model_paths = []
-
-    # Load datasets (one time)
-    train_loaders = []
-    val_loaders = []
-    for fold in range(1, 6):
-        train_dataset = FallDetectionDatasetKFold(fold_number=fold, is_train=True)
-        val_dataset = FallDetectionDatasetKFold(fold_number=fold, is_train=False)
-        
-        train_loader = DataLoader(train_dataset, batch_size=config['batch_size'], shuffle=True)
-        val_loader = DataLoader(val_dataset, batch_size=config['batch_size'], shuffle=False)
-        
-        train_loaders.append(train_loader)
-        val_loaders.append(val_loader)
-
-    # Train each fold in all epochs
-    for epoch in range(config['epochs']):
-        # Training for 1 epoch
-        fold_train_metrics = []
-        fold_val_metrics = []
-        print(f"\n{'='*20} Epoch {epoch+1} {'='*20}\n")
-        for fold in range(1, 6):
-            train_fold(model, criterion, optimizer, fold, config, device, train_loaders, val_loaders, fold_train_metrics, fold_val_metrics, wandb_sync)
-        
-        # Log the average metrics for this epoch and Update best metrics
-        avg_train_accuracy = np.mean([metric['accuracy'] for metric in fold_train_metrics])
-        avg_val_accuracy = np.mean([metric['accuracy'] for metric in fold_val_metrics])
-        avg_val_precision = np.mean([metric['weighted avg']['precision'] for metric in fold_val_metrics])
-        avg_val_recall = np.mean([metric['weighted avg']['recall'] for metric in fold_val_metrics])
-        
-        scheduler.step()
-
-        # Save model and manage saved files
-        model_path = save_model(model, config['run_name'], epoch + 1, avg_val_accuracy)
-        top_model_paths = manage_saved_models(model_path, top_model_paths)
-        
-        print(f"\nEpoch Average Training Accuracy: {avg_train_accuracy:.4f}")
-        print(f"Epoch Average Validation Accuracy: {avg_val_accuracy:.4f}")
-        
-        if avg_val_accuracy > best_accuracy:
-            best_accuracy = avg_val_accuracy
-            best_accuracy_epoch = epoch + 1
-            
-        if avg_val_precision > best_precision:
-            best_precision = avg_val_precision
-            best_precision_epoch = epoch + 1
-            
-        if avg_val_recall > best_recall:
-            best_recall = avg_val_recall
-            best_recall_epoch = epoch + 1
-    
-    
-    # Print best metrics
-    print("\nBest Metrics Summary:")
-    print(f"Best Accuracy: {best_accuracy:.4f} (Epoch {best_accuracy_epoch})")
-    print(f"Best Precision: {best_precision:.4f} (Epoch {best_precision_epoch})")
-    print(f"Best Recall: {best_recall:.4f} (Epoch {best_recall_epoch})")
-
-    # Print final saved models
-    print("\nFinal Saved Models:")
-    for path in top_model_paths:
-        print(f"- {path}")
-    
-    if wandb_sync:
-        wandb.finish()
+    # Cetak ringkasan akhir juga di stdout
+    if summary and summary.get("best_combination"):
+        print("=== OVERALL BEST ===")
+        print(summary["best_combination"]) # detail kombinasi terbaik
 
 if __name__ == '__main__':
-    main(wandb_sync=False)
+    main(wandb_sync=True)

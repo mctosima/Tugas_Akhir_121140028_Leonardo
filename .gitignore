@@ -5,10 +5,19 @@ __pycache__/
 
 # Folder
 extracted_frames/
+cadangan_program_lama/
+cadangan_program_utama_sebelum_perbaikan_akhir/
+checkpoints/
+skeleton-preview/
+training_logs/
+file_tentang_preprocessing/
+
+
 
 # files
 tugas_akhir
 tugas_akhir.pub
+requirements.txt
 
 # C extensions
 *.so
