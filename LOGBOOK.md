@@ -292,3 +292,30 @@ Fungsi di atas untuk mengekstrak frame dalam durasi tertentu, sesuai dengan data
 - menambahkan tabel penjabaran nilai default dan variasi hyperparameter di rancangan evaluasi model (BAB 3)
 - mengevaluasi ulang arsitektur model dalam program
 - mencari alasan penggunaan tiap nilai hyperparamter yang digunakan.
+
+### 12 - 18
+- Bimbingan bersama grup F dan Pak MCT 
+- Membahas hasil revisi minggu lalu dan disetujui
+
+### 19 - 25
+- Melakukan persiapan berkas untuk pendaftaran sidang akhir
+
+### 26 - 31
+- Meminta tanda tangan persetujuan sidang akhir ke dosen pembimbing dan dosen wali
+- daftar sidang akhir
+
+## November 2025
+
+### 01 - 08
+- Membuat web demo bobot mode hasil training
+
+### 09 - 11
+- Mengikuti bimbingan terakhir bersama kedua dosen pembimbing untuk persiapan sidang akhir
+
+### 12
+- Melaksanakan sidang akhir dan lulus....
+
+
+
+
+
