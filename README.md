@@ -1,4 +1,5 @@
-# Fall Detection using Graph Convolutional Network Based on Skeleton Landmarks Mediapipe
+# Fall Position Detection in The Elderly Using Graph Convolutional Network Based on Skeleton Landmarks Mediapipe
+
 
 ## Getting Started
 1. Clone this repository
@@ -116,6 +117,6 @@ If you use this project, please cite:
   title        = {Pengembangan Deteksi Posisi Jatuh Pada Lansia Menggunakan Graph Convolutional Network Berbasis Pose Landmark},
   year         = {2026},
   school       = {Institut Teknologi Sumatera},
-  type         = {Undergraduate Thesis},
+  type         = {Bachelor's Thesis},
   address      = {Indonesia}
 }
