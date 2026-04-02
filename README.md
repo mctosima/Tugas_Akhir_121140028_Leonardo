@@ -1,4 +1,4 @@
-# Fall Detection using Graph Convolutional Network Dased on Skeleton Landmarks Mediapipe
+# Fall Detection using Graph Convolutional Network Based on Skeleton Landmarks Mediapipe
 
 ## Getting Started
 1. Clone this repository
@@ -20,7 +20,7 @@ Ensure that a virtual environment has been created and activated before running 
 
 ### 2. Frame Extraction
 
-1. Download the dataset that can be accessed with this [link](https://kuleuven.app.box.com/s/dyo66et36l2lqvl19i9i7p66761sy0s6) and place it inside the `extract_frame_program` directory.
+1. Download the dataset that can be accessed with this [link](http://kuleuven.box.com/s/dyo66et36l2lqvl19i9i7p66761sy0s6) and place it inside the `extract_frame_program` directory.
 
 2. Navigate to the directory:
 
@@ -68,6 +68,7 @@ This script will:
 ---
 
 ## How to testing the model
+
 1. copy the best model weights from the `pth` folder to the `testing` folder
 2. Run the following command:
 ```bash
@@ -76,6 +77,7 @@ python "testing/test_gcn_kfold.py"
 ---
 
 ## Project Structure
+
 - `data-skeleton`: Contains the extracted skeleton landmarks from the dataset.
 - `extract_frame_program`: Contains the program to extract the frames from the video dataset.
 - `skeleton-preview`: Contains the preview of the skeleton landmarks in .jpg format.
@@ -86,6 +88,7 @@ python "testing/test_gcn_kfold.py"
 ---
 
 ## `.py` Files
+
 - `extract_frame_program\frame_extract_random.py`: A script to extract the frames from the train video dataset.
 - `extract_skeleton.py`: Extract the skeleton landmarks from the dataset.
 - `dataset_rebalancing.py`: Remove random skeleton data from a class to balance the totals for each class
@@ -102,7 +105,7 @@ python "testing/test_gcn_kfold.py"
 - `testing/prediction.py`: A script to predict the fall detection using the trained model.
 ---
 
-## 📖 How to Cite
+## How to Cite
 
 If you use this project, please cite:
 
