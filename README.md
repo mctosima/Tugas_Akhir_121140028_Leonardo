@@ -3,7 +3,7 @@
 
 ## Getting Started
 1. Clone this repository
-2. add 2 new folders: data-skeleton and skeleton-preview 
+2. Add 2 new folders: data-skeleton and skeleton-preview 
 2. Create a virtual environment with Python 3.10. Activate the virtual environment
 3. Install the required packages
     ```bash
@@ -57,7 +57,7 @@ Ensure that a virtual environment has been created and activated before running 
 
 ### 4. Model Training
 
-Run the following command to train the model:
+Run the following command to train the model.
 
 ```bash
 python train_gcn_kfold.py
@@ -70,7 +70,7 @@ This script will:
 
 ## How to testing the model
 
-1. copy the best model weights from the `pth` folder to the `testing` folder
+1. Copy the best model weights from the `pth` folder to the `testing` folder
 2. Run the following command:
 ```bash
 python "testing/test_gcn_kfold.py"
@@ -82,7 +82,7 @@ python "testing/test_gcn_kfold.py"
 - `data-skeleton`: Contains the extracted skeleton landmarks from the dataset.
 - `extract_frame_program`: Contains the program to extract the frames from the video dataset.
 - `skeleton-preview`: Contains the preview of the skeleton landmarks in .jpg format.
-- `splits`: Contains the train and validation splits path (implementing 5-Fold splits) in .json format
+- `splits`: Contains the train and validation splits path (implementing 5-Fold splits) in .json format.
 - `model`: Contains the PyTorch model.
 - `pth`: Contains the trained model weights.
 - `testing`: Contains the testing data (skeleton landmarks) and the testing script.
@@ -92,10 +92,10 @@ python "testing/test_gcn_kfold.py"
 
 - `extract_frame_program\frame_extract_random.py`: A script to extract the frames from the train video dataset.
 - `extract_skeleton.py`: Extract the skeleton landmarks from the dataset.
-- `dataset_rebalancing.py`: Remove random skeleton data from a class to balance the totals for each class
+- `dataset_rebalancing.py`: Remove random skeleton data from a class to balance the totals for each class.
 - `func_distance_features.py`: A function to calculate the distance features from the skeleton landmarks.
 - `func_lm_to_graph.py`: A function to convert the skeleton landmarks to a graph representation.
-- `utils.py`: My handy tools to select the GPU
+- `utils.py`: A handy tools to select the GPU.
 - `k_fold_datareader.py`: A custom PyTorch program that contains the functions to read the skeleton landmarks, generate 5-fold splits then save it to folder splits, and verify those 5-Fold split files.
 - `k_fold_generator.py`: A custom PyTorch class that contains the functions to read the 5-Fold split files and generate the graph representation of the skeleton landmarks.
 - `model/gcn_model.py`: The Graph Convolutional Network model for the skeleton landmarks fall detection.
