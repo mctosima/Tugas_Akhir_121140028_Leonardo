@@ -17,6 +17,7 @@ file_tentang_preprocessing/
 # files
 tugas_akhir
 tugas_akhir.pub
+testing\prediction_lama.py
 
 # C extensions
 *.so
