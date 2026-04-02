@@ -20,7 +20,7 @@ Ensure that a virtual environment has been created and activated before running 
 
 ### 2. Frame Extraction
 
-1. Download the dataset and place it inside the `extract_frame_program` directory.
+1. Download the dataset that can be accessed with this [link](https://kuleuven.app.box.com/s/dyo66et36l2lqvl19i9i7p66761sy0s6) and place it inside the `extract_frame_program` directory.
 
 2. Navigate to the directory:
 
@@ -83,6 +83,7 @@ python "testing/test_gcn_kfold.py"
 - `model`: Contains the PyTorch model.
 - `pth`: Contains the trained model weights.
 - `testing`: Contains the testing data (skeleton landmarks) and the testing script.
+---
 
 ## `.py` Files
 - `extract_frame_program\frame_extract_random.py`: A script to extract the frames from the train video dataset.
@@ -99,10 +100,6 @@ python "testing/test_gcn_kfold.py"
 - `testing/extract_skeleton.py`: A script to extract the skeleton landmarks from the testing dataset.
 - `testing/video_frame_extract.py`: A script to extract the frames from the test video dataset.
 - `testing/prediction.py`: A script to predict the fall detection using the trained model.
-
-
-## Dataset
-The datasets used in this project can be accessed with this [link](https://kuleuven.app.box.com/s/dyo66et36l2lqvl19i9i7p66761sy0s6)
 ---
 
 ## 📖 How to Cite
