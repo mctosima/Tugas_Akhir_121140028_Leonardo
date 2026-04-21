@@ -1,0 +1,2 @@
+munculkan et al = and others
+doi muncul tambahkan note    = {doi: \url{10.35706/syji.v10i01.5173}},
