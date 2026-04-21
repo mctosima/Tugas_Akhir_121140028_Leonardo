@@ -1,0 +1,21 @@
+\newpage
+\chapter{KESIMPULAN DAN SARAN} \label{Bab V}
+
+\section{Kesimpulan} \label{V.Kesimpulan}
+Berdasarkan penelitian yang telah dilakukan, dapat dirangkum 2 poin utama kesimpulan sebagai berikut. 
+
+\begin{enumerate}
+    \item Penelitian ini berhasil merancang \textit{pipeline} \textit{end-to-end}, dimulai dari ekstraksi citra dari video berlabel jatuh/tidak jatuh, dengan sampling 30 frame pada rentang kejadian sebagai masukan ke tahap \textit{pose estimation}. Dilakukan deteksi 33 \textit{pose landmark} menggunakan MediaPipe Pose, lalu Pembagian dataset dengan menerapkan 5-Fold berbasis group/prefix folder untuk mencegah kebocoran data \textit{train} dan \textit{validation} dari folder yang sama, dan konversi koordinat landmark menjadi graf berfitur [x, y, z] dengan \textit{skeleton edges} agar siap diproses GCN. Rangkaian ini disusul arsitektur GCN yang terinspirasi dari ResGCN (tumpukan GCNConv, BatchNorm, ReLU, Dropout, global pooling, kepala MLP, dan aktivasi sigmoid) dengan fungsi kerugian \textit{BCELoss} untuk klasifikasi biner jatuh/tidak jatuh. Seluruh komponen tersebut membentuk prosedur yang sistematis dan dapat direplikasi untuk memetakan dinamika spasial pose menjadi keputusan klasifikasi.
+    \item Dalam Pelatihan model diterapkan 2 tahapan, Pertama melakukan percobaan utama menggunakan konfigurasi Hyperparameter default (Optimizer AdamW, Learning Rate 1e-3, batch size 32, weight decay 1e-5, dropout 0,3, dan residual aktif), evaluasi pelatihan 5-Fold menghasilkan rerata \textit{accuracy} 0,665, \textit{precision} 0,694, \textit{recall} 0,590, dan F1 0,638. Rentang akurasi per-fold berada di 0,644–0,711. Ini menunjukkan kecenderungan model lebih menekan false positive (presisi relatif tinggi) namun masih meloloskan sebagian kasus jatuh (recall lebih rendah). Percobaan kedua (tambahan) yaitu melakukan studi ablasi dengan melatih model yang berfokus pada variasi 1 per 1 hyperparameter. Tujuan nya adalah melihat bagaimana pengaruh dari tiap hyperparameter terhadap kinerja pelatihan model agar dapat mengetahui dan memberi arahan peningkatan peforma model kedepannya. Setelah dilakukan studi ablasi didapatkan berbagai nilai hyperparameter baru yang menunjukkan peningkatan kinerja model papda metrik akurasi antara lain Optimizer RMSProp, Learning Rate 1e-2, batch size 64, weight decay 1e-6 dan dropout 0,2 sementara arsitektur dan residual tetap. kombinasi hyperparamter ini meningkatkan rerata akurasi model sebesar 0,018 dari konfigurasi default (0,665 → 0,683), sekaligus menaikkan presisi sebesar 0,024 (0,694 → 0,718), recall naik sebesar 0,093 (0,590 → 0,683), dan F1 meningkat juga sebesar 0,049 (0,638 → 0,687). Peningkatan yang terjadi pada berbagai metrik, terutama akurasi menandakan model yang semakin baik dalam memberikan prediksi positif yaitu jatuh walaupan belum terlalu signifikan. Dengan demikian, konfigurasi hasil ablasi dapat dikatakan lebih andal dibanding konfigurasi default untuk tugas deteksi posisi jatuh berbasis pose landmark.
+\end{enumerate}
+
+
+\section{Saran} \label{V.Saran}
+Adapun saran yang dapat diberikan untuk penelitian lebih lanjut berdasarkan penelitian ini adalah sebagai berikut:\par
+\begin{enumerate}
+    \item Perlu dilakukan analisis lebih lanjut terkait penerapan \textit{Dense Spatial-Temporal Graph
+Convolutional Network} terhadap dataset yang digunakan dalam penelitian ini.
+    \item Perlu ditinjau kembali pengerjaan studi ablasi dengan mengeksplorasi bagian bagian yang belum dicakup dalam penelitian ini.
+    \item Perlu dilakukan pendalaman terhadap dataset yang digunakan dalam penelitian ini dengan mengeksplorasi variasi posisi awal dalam dataset serta pemerataan komposisi variasi data agar pelatihan yang lebih baik.
+    \item Perlu dilakukan pendalaman terhadap arsitektur model agar dapat mengembangkan arsitektur model yang dapat memberikan kinerja yang lebih baik.
+\end{enumerate}

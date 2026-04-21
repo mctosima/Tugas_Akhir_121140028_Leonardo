@@ -1,0 +1,40 @@
+\clearpage
+\phantomsection% 
+\addcontentsline{toc}{chapter}{RINGKASAN}
+\thispagestyle{fancy}
+
+\begin{center}
+	\large \bfseries \MakeUppercase{Ringkasan}\\
+	\normalsize \normalfont {\thetitle}\\
+	\normalsize \normalfont {\theauthor}\\
+	\bigskip
+	
+	\normalsize \normalfont \justifying
+\normalsize \normalfont \justifying
+
+WHO melaporkan sekitar 37,3 juta kejadian jatuh yang memerlukan perhatian medis dan sekitar 684.000 kematian akibat jatuh di seluruh dunia \cite{Who2021}. Lansia di panti jompo memiliki risiko jatuh lebih tinggi dibanding lansia yang tinggal di rumah, dengan kejadian 30--50\% per tahun dan sekitar 40\% mengalami jatuh berulang \cite{ACEBAC2023}. Kondisi ini membutuhkan sistem deteksi jatuh yang dapat bekerja 24 jam, terutama pada area yang tidak selalu diawasi. Pendekatan berbasis \textit{Deep Learning} untuk citra, dengan kombinasi CNN dan LSTM, telah diteliti tetapi membutuhkan daya komputasi tinggi \cite{Chhetri2021}. 
+
+Alternatif yang lebih efisien adalah menggunakan \textit{pose landmark} \textit{MediaPipe} yang merepresentasikan postur tubuh manusia dalam 33 koordinat titik, sehingga ukuran data jauh lebih kecil daripada citra penuh \cite{Lugaresi2019}. Data tersebut dapat diubah menjadi data graf yang relevan diproses dengan \textit{Graph Convolutional Network} (GCN) untuk mempelajari relasi spasial antar titik tubuh agar dapat mengenali pola posisi tubuh yang mengindikasikan jatuh \cite{Zahan2025}. Penelitian ini berfokus pada pengembangan model deteksi posisi jatuh berbasis \textit{pose landmark} \textit{MediaPipe} dengan GCN. \par
+
+Penelitian ini merumuskan dua permasalahan. Pertama, bagaimana mengembangkan model GCN berbasis \textit{pose landmark} untuk mendeteksi posisi jatuh pada lansia. Kedua, bagaimana hasil evaluasi model, terutama berdasarkan akurasi dari \textit{confusion matrix}, ketika membandingkan antara konfigurasi \textit{hyperparameter} default dan konfigurasi hasil studi ablasi. Terdapat 2 Tujuan penelitian, pertama, mengembangkan model deteksi posisi jatuh pada lansia menggunakan GCN berbasis \textit{pose landmark} \textit{MediaPipe}. Kedua, mengevaluasi performa model dengan fokus pada akurasi \textit{confusion matrix} melalui perbandingan konfigurasi \textit{hyperparameter} default dan hasil studi ablasi. \par
+
+Penelitian dimulai dari identifikasi masalah dan penetapan tujuan, lalu dilanjutkan studi literatur untuk mempelajari pendekatan terdahulu dan keterbatasannya. Dataset dikumpulkan dalam bentuk video aktivitas manusia dari kamera 2D. Tahap prapemrosesan mencakup ekstraksi \textit{frame} dan ekstraksi 33 \textit{pose landmark} menggunakan \textit{Mediapipe Pose}. \textit{Landmark} kemudian dikonversi menjadi graf sehingga hubungan antartitik tubuh dapat dimodelkan dengan terstruktur.
+
+Digunakan skema \textit{5-fold} dengan 20\% data validasi pada setiap \textit{fold} demi mencegah kebocoran data. Model dilatih dan dievaluasi menggunakan metrik \textit{accuracy}, \textit{precision}, \textit{recall}, dan \textit{F1-score}, dengan fokus utama pada \textit{accuracy}. Nilai akhir performa dihitung sebagai rata-rata akurasi dari lima \textit{fold}. 
+
+Eksperimen dilakukan dalam dua tahap. Tahap pertama memakai konfigurasi default dengan \textit{optimizer} AdamW, \textit{learning rate} $1\times10^{-3}$, \textit{weight decay} $1\times10^{-5}$, \textit{batch size} 32, \textit{dropout} 0{,}3, 100 epoch dengan \textit{early stopping}, \textit{hidden channel} [64, 32, 32, 32, 32], dan \textit{residual connection} aktif. Tahap kedua ialah studi ablasi dengan memvariasikan lima \textit{hyperparameter} inti, yaitu (\textit{optimizer}, \textit{learning rate}, \textit{weight decay}, \textit{batch size}, \textit{dropout}) satu per satu, sementara komponen lain dipertahankan sesuai konfigurasi default. \par
+
+Dataset setelah \textit{resampling} menghasilkan 267 video jatuh dan 270 video tidak jatuh. Dari seluruh video diekstraksi 16.110 citra, lalu dilakukan deteksi 33 \textit{pose landmark}. Data diseimbangkan antara kelas jatuh dan tidak jatuh hingga total 9.500 data. Setiap data landmark diubah menjadi graf agar dapat diterima model untuk mempelajari relasi spasial antar titik tubuh. 
+
+Arsitektur GCN dibangun dari tumpukan lapis \textit{GCNConv} yang diikuti \textit{BatchNorm1d}, ReLU, \textit{dropout}, dan \textit{Residual connection}. Representasi node diagregasi dengan \textit{global pooling}, lalu klasifikasi graf melalui MLP dua lapis. Karena klasifikasi biner, keluaran memakai aktivasi \textit{sigmoid} dengan satu neuron. 
+
+Pada konfigurasi default, evaluasi \textit{5-fold} menunjukkan performa terbaik pada fold-4 dengan TP 703, FN 318, FP 138, TN 419, akurasi 0,711, dan F1 0,717. Bobot terbaik berasal dari fold-4 pada epoch ke-2 dengan akurasi validasi 0,71 dan digunakan untuk uji pada dataset primer. Pada pengujian, model dapat mengklasifikasikan 22 sampel jatuh dengan benar, namun masih cenderung memprediksi aktivitas tidak jatuh sebagai jatuh. Akurasi uji turun menjadi 0,39, terutama karena data tidak jatuh pada uji berasal dari aktivitas duduk di kursi yang memiliki pola pose mirip jatuh. \par
+
+Studi ablasi dilakukan pada data fold-4 agar perbandingan adil. Hasil terbaik per \textit{hyperparameter} adalah RMSProp (akurasi 0,693), \textit{learning rate} 0,01 (0,749), \textit{batch size} 64 (0,687), \textit{weight decay} $1\times10^{-6}$ (0,724), dan \textit{dropout} 0,2 (0,686). Kombinasi terbaik diuji ulang dengan skema \textit{5-fold} dan menunjukkan fold-1 sebagai performa terbaik (akurasi 0,725, \textit{recall} 0,725, dan F1 0,723). Secara rerata, konfigurasi hasil studi ablasi meningkatkan kinerja model dibanding konfigurasi default, dengan kenaikan akurasi 0,018, presisi 0,024, F1-score 0,049, dan \textit{recall} 0,093. \par
+
+Penelitian ini berhasil menyusun \textit{pipeline end-to-end} untuk deteksi jatuh, mulai dari ekstraksi citra video berlabel, estimasi 33 \textit{pose landmark} menggunakan \textit{MediaPipe Pose}, pembagian data dengan \textit{5-fold} berbasis folder untuk mencegah kebocoran, hingga konversi \textit{landmark} menjadi graf berfitur [x, y, z] dengan \textit{skeleton edges} agar kompatibel dengan GCN. Arsitektur GCN mengadopsi komponen utama seperti tumpukan \textit{GCNConv}, normalisasi, aktivasi, regularisasi, \textit{global pooling}, MLP, dan aktivasi \textit{sigmoid} untuk klasifikasi biner dengan \textit{BCELoss}. Pelatihan dua tahap menunjukkan konfigurasi default memberi rerata akurasi 0,665 dengan presisi 0,694, \textit{recall} 0,590, dan F1 0,638, sedangkan konfigurasi hasil ablasi (RMSProp, \textit{learning rate} $1\times10^{-2}$, \textit{batch size} 64, \textit{weight decay} $1\times10^{-6}$, \textit{dropout} 0,2, residual tetap) meningkatkan rerata akurasi menjadi 0,683 serta meningkatkan presisi, \textit{recall}, dan F1. Saran untuk penelitian lanjutan antara lain perlunya menguji pendekatan \textit{Dense Spatial-Temporal Graph Convolutional Network}, memperluas cakupan studi ablasi ke komponen lain yang belum dieksplorasi, memperdalam analisis dataset terutama variasi pose awal dan pemerataan komposisi aktivitas agar model tidak bias pada pola tertentu (misalnya duduk), serta mengembangkan arsitektur model agar kinerja meningkat pada data uji yang lebih beragam. \par
+
+	\vfill
+	
+\end{center}
+\clearpage
